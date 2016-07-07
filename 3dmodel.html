@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>3D Cube</title>
+    <style>
+        body {
+            margin : 0px;
+        }
+    </style>
+</head>
+<body>
+	<script type="text/javascript" src="three.min.js" charset="UTF-8"></script>
+	<script type="text/javascript" src="MTLLoader.js" charset="UTF-8"></script>
+	<script type="text/javascript" src="OBJMTLLoader.js" charset="UTF-8"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script>
+
+// full screen
+var container = document.createElement( 'div' );
+document.body.appendChild( container );
+
+// mouse
+var mouseX = 0;
+var mouseY = 0;
+
+var windowX = window.innerWidth;
+var windowY = window.innerHeight;
+var windowHalfX = windowX / 2;
+var windowHalfY = windowY / 2;
+
+// (1) Scene
+var scene = new THREE.Scene();
+
+// (2) Light
+var ambient = new THREE.AmbientLight( 0x101030 );
+scene.add( ambient );
+
+var directionalLight = new THREE.DirectionalLight( 0xffeedd );
+directionalLight.position.set( 0, 0, 1 ).normalize();
+scene.add( directionalLight );
+
+var spotlight = new THREE.SpotLight( 0xffffff, 3, 0, Math.PI / 2 );
+spotlight.target.position.set(0,0,0);
+spotlight.position.z = 100;
+scene.add(spotlight);
+
+// (3) Camera
+var camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
+camera.position.z = 1000;
+
+// (4) Model
+var loader = new THREE.OBJMTLLoader();
+loader.addEventListener( 'load', function ( event ) {
+
+	var object = event.content;
+	
+	// Blender の距離 1 と three.js の距離 1 の換算は不明。実際に動かしてみて object.scale で調整する
+    //object.scale.x = 0.1;
+    //object.scale.y = 0.1;
+    //object.scale.z = 0.1;
+	
+	scene.add( object );
+
+});
+loader.load( 'OSTM_Jason-2.obj', 'OSTM_Jason-2.mtl' );
+
+// xyz軸 (補助線)
+var axes = new THREE.AxisHelper(1000);
+scene.add( axes );
+
+
+// (5) WebGL Renderer
+renderer = new THREE.WebGLRenderer();
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.setClearColor(0x000000);
+renderer.clear(true);
+container.appendChild( renderer.domElement );
+
+// (6) Animation
+function animation() {
+	camera.position.x = 100.0 * Math.sin(2.0 * Math.PI * mouseX);
+	camera.position.y = 1000.0 * mouseY;
+	camera.position.z = 100.0 * Math.cos(2.0 * Math.PI * mouseX);
+	
+    camera.lookAt(new THREE.Vector3(-1.0 * camera.position.x ,-1.0 * camera.position.y,-1.0 * camera.position.z));
+	
+    spotlight.position.x = camera.position.x;
+	spotlight.position.y = camera.position.y;
+
+    renderer.render( scene, camera );
+    requestAnimationFrame(animation)
+}
+
+animation();
+
+// (7) Event
+$(document).on('mousemove', function(event) {
+    mouseX = (event.clientX - windowHalfX) / windowX;
+    mouseY = (event.clientY - windowHalfY) / windowY;
+});
+
+	</script>
+</body>
+</html>

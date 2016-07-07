@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>3D Cube</title>
+    <style>
+        div {
+            border : 1px solid;
+        }
+    </style>
+</head>
+<body>
+    <div id="webgl_view"></div>
+    <script type="text/javascript" src="three.js" charset="utf-8"></script>
+<script type="text/javascript" src="OBJLoader.js"></script>    
+    <script src="MTLLoader.js"></script>
+    <script src="OBJMTLLoader.js"></script>
+    <script src="ColladaLoader.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script>
+
+var height = 400;
+var width  = 400;
+
+var container = $('#webgl_view');
+container.css({
+    height :  height + "px",
+    width  : width + "px"});
+
+// (4) Scene
+var scene = new THREE.Scene();
+
+// (1) 立方体
+
+/*
+// 形状
+var cubeGeometry = new THREE.CubeGeometry(10,10,10);
+// 色
+var cubeMaterial = new THREE.MeshPhongMaterial({color : 0x00ff00});
+
+var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+
+scene.add(cube);
+*/
+
+// (2) ライト（平行光)
+var light = new THREE.SpotLight( 0xffffff, 3, 100, Math.PI / 8 );
+light.target.position.set(0,0,0);
+
+scene.add(light);
+
+// (3) 環境光
+var alight = new THREE.AmbientLight(0x404040);
+
+scene.add(alight);
+
+    // 床
+    var oneWidth = 1, oneHeight = 1, wUnits = 100, hUnits = 100;
+    var groundGeo = new THREE.PlaneGeometry(oneWidth*wUnits, oneHeight*hUnits, wUnits, hUnits);
+    for(var i=0, len = groundGeo.faces.length, f=-1; i<len; i++){
+      f = -1;
+      if((i/wUnits | 0)%2==1){ f = ~f; }
+      if((i%wUnits)%2==1){ f = ~f; }
+      groundGeo.faces[i].materialIndex = f+1;
+    }
+    var ground = new THREE.Mesh(
+      groundGeo,
+      new THREE.MeshFaceMaterial([
+        new THREE.MeshBasicMaterial({color: 0x999999, wireframe:true }),
+        new THREE.MeshBasicMaterial({color: 0x4d4d4d, wireframe:true })
+      ])
+    );
+    ground.rotation.x = -Math.PI/2;
+    scene.add(ground);
+
+    // xyz軸
+    var axes = new THREE.AxisHelper(100);
+    scene.add( axes );
+
+// (5) Camera (視野角, アスペクト比(縦横比), 描画対象(最小距離), 描画対象(最大距離)
+var camera = new THREE.PerspectiveCamera(90, (height / width), 0.1, 10);
+
+// (6) WebGL Renderer
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(height, width);
+renderer.setClearColor(0x000000);
+renderer.clear(true);
+
+container.append(renderer.domElement);
+
+// (7) Animation (Rotate)
+function animation() {
+    var time = (new Date()).getTime();
+    
+    //cube.rotation.y = time / 300;
+    
+    // カメラ位置
+    camera.position.x = 1.0 * Math.sin(time/3000);
+    camera.position.y = 1.0 * Math.sin(time/6000);
+    camera.position.z = 1.0 * Math.cos(time/3000);
+    
+    // カメラ方向
+    camera.lookAt(new THREE.Vector3(-1.0 * camera.position.x ,-1.0 * camera.position.y,-1.0 * camera.position.z));
+    
+    // ライト
+    light.position.set(camera.position.x, camera.position.y, camera.position.z);
+    
+    renderer.render(scene, camera);
+    
+    requestAnimationFrame(animation);
+}
+var OBJMtl;
+var loader = new THREE.OBJMTLLoader();
+
+// load完了時の動作
+loader.addEventListener( 'load', function ( res ) {
+  OBJMtl = res.content;
+  console.log(OBJMtl);
+  scene.add( OBJMtl );
+  animation();
+});
+
+// 読み込み開始。第1引数にOBJのURL、第2引数にmtlのURL
+loader.load( 'Aqua.obj', 'Aqua.mtl');
+
+    </script>
+</body>
+</html>

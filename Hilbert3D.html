@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>Hilbert 3D Cube</title>
+    <style>
+        div {
+            border : 1px solid;
+        }
+    </style>
+</head>
+<body>
+Fog
+    <div id="webgl_view"></div>
+    
+    <script type="text/javascript" src="three.js" charset="utf-8"></script>
+    <script type="text/javascript" src="Hilbert.js" charset="utf-8"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script>
+ 
+var height = 240;
+var width  = 320;
+ 
+var container = $('#webgl_view');
+container.css({
+    height :  height + "px",
+    width  : width + "px"});
+
+function cource(t) {
+    return {
+        x : 10.0 * Math.cos(t),
+        y : 2.0 * Math.sin(t),
+        z : 10.0 * Math.sin(t * 2),
+        dx : -10.0 * Math.sin(t),
+        dy : 2.0 * Math.cos(t),
+        dz : 10.0 * Math.cos(t * 2),
+    };
+}
+
+// (1) 立方体
+ 
+// 形状
+var cubeGeometry = new THREE.CubeGeometry(1,1,1);
+
+// テクスチャを作成
+var texture = new THREE.Texture(hilbert(100, 100, 3, 'black', 'lime'));
+texture.needsUpdate = true;
+
+// 色
+var cubeMaterial = new THREE.MeshPhongMaterial({
+    map : texture,
+    fog: true
+});
+
+var cubeArray = new Array();
+for (var t = 0; t < 2 * Math.PI; t += 0.1) {
+    var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    
+    var position = cource(t);
+    
+    cube.position.x = position.x;
+    cube.position.y = position.y;
+    cube.position.z = position.z;
+    
+    cube.rotation.y = Math.atan(position.x/position.z);
+    
+    cubeArray.push(cube);
+}
+ 
+// (2) ライト（平行光) : (0,10,10)が光源ではなく、(0,10,10)方向無限遠方からの平行光
+var light = new THREE.DirectionalLight(0xffffff);
+light.position.x = 0;
+light.position.y = 10;
+light.position.z = 10;
+
+// (3) 環境光
+var alight = new THREE.AmbientLight(0x404040);
+
+// (4) Scene
+var scene = new THREE.Scene();
+for (var cnt = 0 ; cnt < cubeArray.length; cnt++ ) {
+    scene.add(cubeArray[cnt]);
+}
+scene.add(light);
+scene.add(alight);
+scene.fog = new THREE.FogExp2(0x000020, 0.1);
+
+// (5) Camera (視野角, アスペクト比(縦横比), 描画対象(最小距離), 描画対象(最大距離)
+var camera = new THREE.PerspectiveCamera(90, width/height, 0.1, 100);
+ 
+// (6) WebGL Renderer
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(width, height);
+renderer.setClearColor(0x000000);
+renderer.clear(true);
+ 
+container.append(renderer.domElement);
+ 
+// (7) Animation (Rotate)
+function animation() {
+    var time = (new Date()).getTime();
+    
+    var position = cource(time / 5000);
+    camera.position.x = position.x;
+    camera.position.y = position.y + 1.0;
+    camera.position.z = position.z;
+    camera.lookAt(new THREE.Vector3(position.dx, position.dy, position.dz));
+    
+    renderer.render(scene, camera);
+     
+    requestAnimationFrame(animation);
+}
+ 
+animation();
+    </script>
+</body>
+</html>

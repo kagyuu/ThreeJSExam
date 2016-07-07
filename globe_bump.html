@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>Globe and Texture</title>
+    <style>
+        div {
+            border : 1px solid;
+        }
+    </style>
+</head>
+<body>
+    <div id="webgl_view"></div>
+    <script type="text/javascript" src="three.js" charset="utf-8"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script>
+
+var height = 640;
+var width  = 640;
+
+var container = $('#webgl_view');
+container.css({
+    height :  height + "px",
+    width  : width + "px"});
+
+// (1) 球体
+var geometry = new THREE.SphereGeometry(1, 32, 32);
+
+var material = new THREE.MeshPhongMaterial({
+    map: THREE.ImageUtils.loadTexture('land_shallow_topo_2048.jpg') ,
+    bumpMap: THREE.ImageUtils.loadTexture('srtm_ramp2.world.5400x2700.jpg') 
+});
+
+var sphere = new THREE.Mesh(geometry, material);
+      
+// (2) ライト（平行光)
+var light = new THREE.DirectionalLight(0xffffff);
+light.position.x = Math.sin(Math.PI * 23.4 / 180.0);
+light.position.y = Math.cos(Math.PI * 23.4 / 180.0);
+light.position.z = 0;
+
+// (3) 環境光
+var alight = new THREE.AmbientLight(0x444444);
+
+// (4) Scene
+var scene = new THREE.Scene();
+scene.add(sphere);
+scene.add(light);
+scene.add(alight);
+
+// (5) Camera (視野角, アスペクト比(縦横比), 描画対象(最小距離), 描画対象(最大距離)
+var camera = new THREE.PerspectiveCamera(90, (height / width), 0.1, 10);
+
+// (6) WebGL Renderer
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(height, width);
+renderer.setClearColor(0x101010);
+renderer.clear(true);
+
+container.append(renderer.domElement);
+
+// (7) Animation (Rotate)
+function animation() {
+    var time = (new Date()).getTime();
+    
+    sphere.rotation.y = time / 3000;
+    
+    camera.position.x = 1.5 * Math.sin(-1.0 * time / 10000);
+    camera.position.y = 1.0 * Math.sin(time / 10000);
+    camera.position.z = 1.5 * Math.cos(-1.0 * time / 10000);
+    
+    camera.lookAt(new THREE.Vector3(-1.0 * camera.position.x,-1.0 * camera.position.y,-1.0 * camera.position.z));
+
+    renderer.render(scene, camera);
+    
+    requestAnimationFrame(animation);
+}
+
+animation();
+
+
+    </script>
+</body>
+</html>

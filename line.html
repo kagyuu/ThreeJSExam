@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Line</title>
+    <style>
+        body {
+            margin : 0px;
+        }
+    </style>
+</head>
+<body>
+</body>
+<script type="text/javascript" src="three.js" charset="utf-8"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script>
+
+// full screen
+var container = document.createElement( 'div' );
+document.body.appendChild( container );
+ 
+// mouse
+var mouseX = 0;
+var mouseY = 0;
+ 
+var windowX = window.innerWidth;
+var windowY = window.innerHeight;
+var windowHalfX = windowX / 2;
+var windowHalfY = windowY / 2;
+ 
+// (1) Scene
+var scene = new THREE.Scene();
+ 
+// (2) Light
+var ambient = new THREE.AmbientLight( 0x101030 );
+scene.add( ambient );
+ 
+var directionalLight = new THREE.DirectionalLight( 0xffeedd );
+directionalLight.position.set( 0, 0, 1 ).normalize();
+scene.add( directionalLight );
+ 
+var spotlight = new THREE.SpotLight( 0xffffff, 3, 0, Math.PI / 2 );
+spotlight.target.position.set(0,0,0);
+spotlight.position.z = 100;
+scene.add(spotlight);
+ 
+// (3) Camera
+var camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
+camera.position.z = 1000;
+ 
+// (4) Line
+
+//geometryの宣言と生成
+var geometry = new THREE.Geometry();
+
+//頂点座標の追加
+var point;
+var R = 30.0;
+for (th = 0.0 ;th < (Math.PI * 2.0); th += 0.001) {
+  point = plus(
+    [R * sin(th), R * cos(th), 0.0],
+    rotate(
+      5.0 * sin(th), 5.0 * cos(th), 0.0,
+      cos(th), -1.0 * sin(th), 0.0,
+      th * 100.0)
+    );
+  geometry.vertices.push( new THREE.Vector3(point[0], point[1], point[2]) ); 
+  console.log(point);
+}
+
+//線オブジェクトの生成	
+var line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xFFFFFF} ) );
+
+//sceneにlineを追加
+scene.add( line );
+
+// xyz軸 (補助線)
+var axes = new THREE.AxisHelper(1000);
+scene.add( axes );
+ 
+//GridHelper(大きさ, １マスの大きさ)
+var grid = new THREE.GridHelper(100, 10);
+ 
+//シーンオブジェクトに追加
+scene.add(grid);
+ 
+// (5) WebGL Renderer
+renderer = new THREE.WebGLRenderer();
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.setClearColor(0x000000);
+renderer.clear(true);
+container.appendChild( renderer.domElement );
+ 
+// (6) Animation
+function animation() {
+    var time = (new Date()).getTime();
+    
+    camera.position.x = 100.0 * Math.sin(2.0 * Math.PI * mouseX);
+    camera.position.y = 1000.0 * mouseY;
+    camera.position.z = 100.0 * Math.cos(2.0 * Math.PI * mouseX);
+    
+    line.rotation.z = -1.0 * time / 3000;
+     
+    camera.lookAt(new THREE.Vector3(-1.0 * camera.position.x ,-1.0 * camera.position.y,-1.0 * camera.position.z));
+     
+    spotlight.position.x = camera.position.x;
+    spotlight.position.y = camera.position.y;
+ 
+    renderer.render( scene, camera );
+    requestAnimationFrame(animation)
+}
+ 
+animation();
+ 
+// (7) Event
+$(document).on('mousemove', function(event) {
+    mouseX = (event.clientX - windowHalfX) / windowX;
+    mouseY = (event.clientY - windowHalfY) / windowY;
+});
+
+/**
+ * (x,y,z) を (nx,ny,nz) を軸として、th 回転.
+ */
+function rotate (x, y, z, nx, ny, nz, th) {
+  var m = [
+    [nx * nx * (1-cos(th)) + cos(th)     , nx * ny * (1-cos(th)) - nz * sin(th), nz * nx * (1-cos(th)) + ny * sin(th)],
+    [nx * ny * (1-cos(th)) + nz * sin(th), ny * ny * (1-cos(th)) + cos(th)     , ny * nz * (1-cos(th)) - nx * sin(th)],
+    [nz * nx * (1-cos(th)) - ny * sin(th), ny * nz * (1-cos(th)) + nx * sin(th), nz * nz * (1-cos(th)) + cos(th)]
+  ];
+
+  var v = [
+    x,
+    y,
+    z];
+  
+  return multiple(m, v);
+}
+
+/**
+ * 行列とベクトルの掛け算.
+ */
+function multiple (m, v) {
+
+  var size = v.length;
+  var res  = new Array();
+  var elem;
+  
+  for (var cnt1 = 0; cnt1 < size; cnt1++) {
+    elem = 0.0;
+    
+    for (var cnt2 = 0; cnt2 < size; cnt2++) {
+      elem += m[cnt1][cnt2] * v[cnt2];
+    }
+    
+    res.push(elem);
+  }
+  
+  return res;
+}
+
+/**
+ * ベクトル同士の足し算.
+ */
+function plus (v1, v2) {
+
+  var size = v1.length;
+  var res  = new Array();
+  
+  for (var cnt = 0; cnt < size; cnt++) {
+    res.push(v1[cnt] + v2[cnt]);
+  }
+  
+  return res;
+
+}
+
+function cos(th) {
+  return Math.cos(th);
+}
+function sin(th) {
+  return Math.sin(th);
+}
+
+</script>
+</html>

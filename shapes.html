@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>3D Shapes</title>
+    <style>
+        div {
+            border : 1px solid;
+        }
+    </style>
+</head>
+<body>
+    <div id="webgl_view"></div>
+    <script type="text/javascript" src="three.js" charset="utf-8"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script src="helvetiker_regular.typeface.js"></script>
+    <script>
+
+var height = 400;
+var width  = 400;
+
+var container = $('#webgl_view');
+container.css({
+    height :  height + "px",
+    width  : width + "px"});
+
+// (1) 物体
+
+var cubeMaterial = new THREE.MeshPhongMaterial({color : 0x00ff00});
+
+// 立方体
+var cube = new THREE.Mesh(new THREE.CubeGeometry(1,1,1), cubeMaterial);
+cube.position.x = -4;
+
+// 平面
+var plane = new THREE.Mesh(new THREE.PlaneGeometry(1,1), cubeMaterial);
+plane.position.x = -2;
+
+var r = 1.0 / Math.sqrt(2);
+
+// 六角柱 new THREE.CylinderGeometry(radiusTop, radiusBottom, height, radiusSegments, heightSegments, openEneded)
+// radiusTop      上面半径
+// radiusBottom   下面半径
+// height         高さ
+// heightSegments 垂直方向の分割数(height が長すぎる時適宜分割して、視界外の部分の計算を端折る)
+// openEnded      true : 中空, false : 中身が詰まっている (上面と下面を描画) 
+var hexagon = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1.0, 6, 1, false), cubeMaterial);
+hexagon.position.x = 0;
+
+// 円柱 (=32角柱)
+var cylinder = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1.0, 32, 1, false), cubeMaterial);
+cylinder.position.x = 2;
+
+// 円錐 (=32角錐)
+var cone = new THREE.Mesh(new THREE.CylinderGeometry(0, r, 1.0, 32, 1, false), cubeMaterial);
+cone.position.x = 4;
+
+// 球
+var sphere = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 32), cubeMaterial);
+sphere.position.x = -4;
+sphere.position.z = -2;
+
+// 円
+var circle = new THREE.Mesh(new THREE.CircleGeometry(r, 32, 0, Math.PI * 1.5), cubeMaterial);
+circle.position.x = -2;
+circle.position.z = -2;
+
+// テキスト
+// フォントデータは https://typeface.neocracy.org/ の形式
+// TextGeometry のデフォルトフォントは helvetiker regular
+// size : 高さ
+// height : 厚み
+// font   : 読み込んだフォント情報(JSON)の familyName
+// weight : 読み込んだフォント情報(JSON)の cssFontWeight
+// style  : 読み込んだフォント情報(JSON)の cssFontStyle
+var text = new THREE.Mesh(new THREE.TextGeometry("Hello", {
+  size: 1.0,
+  height: 0.5
+}), cubeMaterial);
+text.position.x = 0;
+text.position.z = -2;
+
+// (2) ライト（平行光)
+var light = new THREE.DirectionalLight(0xffffff);
+light.position.x = 0;
+light.position.y = 10;
+light.position.z = 10;
+
+// (3) 環境光
+var alight = new THREE.AmbientLight(0x404040);
+
+// (4) Scene
+var scene = new THREE.Scene();
+scene.add(cube);
+scene.add(plane);
+scene.add(hexagon);
+scene.add(cylinder);
+scene.add(sphere);
+scene.add(cone);
+scene.add(circle);
+scene.add(text);
+scene.add(light);
+scene.add(alight);
+
+// (5) Camera (視野角, アスペクト比(縦横比), 描画対象(最小距離), 描画対象(最大距離)
+var camera = new THREE.PerspectiveCamera(90, (height / width), 0.1, 10);
+
+// カメラ位置
+camera.position.x = 0;
+camera.position.y = 2;
+camera.position.z = 2;
+
+// カメラ方向
+camera.lookAt(new THREE.Vector3(0,-2,-2));
+
+// (6) WebGL Renderer
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(height, width);
+renderer.setClearColor(0x000000);
+renderer.clear(true);
+
+container.append(renderer.domElement);
+
+// (7) Animation (Rotate)
+function animation() {
+    var time = (new Date()).getTime();
+    
+    cube.rotation.y = time / 300;
+    plane.rotation.y = time / 300;
+    hexagon.rotation.y = time / 300;
+    circle.rotation.y = time / 300;
+    text.rotation.x = time / 1000;
+    
+    camera.position.x = 8.0 * Math.sin(time / 3000);
+    camera.position.y = 3.0 * Math.sin(time / 9000);
+    camera.position.z = 3.0 * Math.cos(time / 9000);
+    camera.lookAt(new THREE.Vector3(-1.0 * camera.position.x,-1.0 * camera.position.y,-1.0 * camera.position.z));
+    
+    renderer.render(scene, camera);
+    
+    // 次のアニメーション処理の呼び出し
+    // (実行環境によって、次回呼び出しまでの間隔が異なる
+    // 次回のオブジェクトやカメラの位置は、何回 animation()
+    // が呼び出されたかではなく、時刻から計算するようにする)
+    requestAnimationFrame(animation);
+}
+
+animation();
+
+
+    </script>
+</body>
+</html>
